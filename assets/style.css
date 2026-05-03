@@ -1,0 +1,51 @@
+/* Layout */
+.main { background: #0e1117; }
+.block-container { padding-top: 2rem; }
+
+/* Header */
+.header-title {
+  font-size: 40px;
+  font-weight: 700;
+  color: #4CAF50;
+  margin-bottom: 0;
+}
+.subtext {
+  color: #9aa0a6;
+  margin-top: 4px;
+}
+
+/* Cards */
+.card {
+  background: #1c1f26;
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  margin-bottom: 12px;
+}
+
+/* Metrics */
+.metric-card {
+  background: #111827;
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-low { background:#1b5e20; color:#a5d6a7; }
+.badge-med { background:#ff8f00; color:#ffe082; }
+.badge-high{ background:#b71c1c; color:#ef9a9a; }
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: #2a2f3a;
+  margin: 14px 0;
+}
