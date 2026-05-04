@@ -1,7 +1,7 @@
 tensorflow==2.12.0
 numpy
-opencv-python-headless
 streamlit
 matplotlib
 Pillow
 scikit-learn
+opencv-python-headless
