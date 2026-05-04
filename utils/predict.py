@@ -1,20 +1,15 @@
 import numpy as np
 import tensorflow as tf
 from utils.preprocess import preprocess_image
-import os
 
-# ✅ Load model (FIXED: using .h5 + compile=False)
-MODEL_PATH = os.path.join("model", "model.h5")
-model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+# 🔥 FIX: load correct model file
+model = tf.keras.models.load_model("model/best_model.h5")
 
-# ✅ Load class mapping safely
+# Load class mapping
 class_indices = np.load("model/class_names.npy", allow_pickle=True).item()
 
-# ✅ Clean class names
-class_names = [
-    cls.split("___")[-1].replace("_", " ").lower()
-    for cls in class_indices.keys()
-]
+# 🔥 IMPORTANT: keep correct class order
+class_names = list(class_indices.keys())
 
 def predict(image):
     image = image.convert("RGB")
