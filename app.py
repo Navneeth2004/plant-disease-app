@@ -1,122 +1,139 @@
 import streamlit as st
 from PIL import Image
-import matplotlib.pyplot as plt
 from utils.predict import predict
 from utils.disease_info import disease_info
+import matplotlib.pyplot as plt
+import numpy as np
 
 # -------------------------
 # PAGE CONFIG
 # -------------------------
-st.set_page_config(page_title="Plant AI", page_icon="🌱", layout="wide")
+st.set_page_config(
+    page_title="Plant Intelligence Dashboard",
+    layout="wide",
+    page_icon="🌿"
+)
 
 # -------------------------
-# LOAD CSS
+# CUSTOM CSS (🔥 UI UPGRADE)
 # -------------------------
-try:
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-except:
-    pass
-
-# -------------------------
-# SESSION STATE
-# -------------------------
-if "history" not in st.session_state:
-    st.session_state.history = []
+st.markdown("""
+<style>
+.main {
+    background-color: #0E1117;
+    color: white;
+}
+h1, h2, h3 {
+    color: #4CAF50;
+}
+.block-container {
+    padding-top: 2rem;
+}
+.metric-container {
+    background: #1E222A;
+    padding: 15px;
+    border-radius: 10px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # -------------------------
 # HEADER
 # -------------------------
-st.markdown('<div class="header-title">🌱 Plant Intelligence Dashboard</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtext">AI-powered plant disease detection & insights</div>', unsafe_allow_html=True)
-
-st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-
-# -------------------------
-# SIDEBAR
-# -------------------------
-st.sidebar.title("⚙️ Controls")
-
-theme = st.sidebar.toggle("🌗 Dark Mode", value=True)
-
-st.sidebar.markdown("### 📌 About")
-st.sidebar.info("Detect plant diseases with AI and get actionable insights.")
-
-st.sidebar.markdown("### 📜 History (Last 5)")
-for item in st.session_state.history[-5:][::-1]:
-    st.sidebar.write(f"{item}")
+st.title("🌿 Plant Intelligence Dashboard")
+st.caption("AI-powered crop disease detection with insights & analytics")
 
 # -------------------------
 # FILE UPLOAD
 # -------------------------
-uploaded = st.file_uploader("📤 Upload a leaf image", type=["jpg", "png", "jpeg"])
+uploaded_file = st.file_uploader("📤 Upload a leaf image", type=["jpg", "png", "jpeg"])
 
-if uploaded:
-    image = Image.open(uploaded)
+if uploaded_file:
+    image = Image.open(uploaded_file)
 
-    # Tabs
-    tab1, tab2 = st.tabs(["🔍 Analysis", "📊 Insights"])
-
-    with tab1:
-        col1, col2 = st.columns([1.2, 1])
-
-        # IMAGE
-        with col1:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.image(image, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        # RESULT
-        with col2:
-            with st.spinner("Analyzing image..."):
-                label, confidence, probs, top2_idx = predict(image)
-
-            # Save history
-            st.session_state.history.append(f"{label.title()} ({confidence*100:.1f}%)")
-
-            info = disease_info.get(label, {"cause":"Unknown","solution":"N/A","risk":"N/A"})
-
-            # Risk badge
-            risk = info["risk"].lower()
-            badge_class = "badge-low" if risk=="low" else "badge-med" if risk=="medium" else "badge-high"
-
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-
-            st.markdown("### 🧠 Prediction")
-            st.markdown(f"## {label.title()}")
-
-            st.markdown("### 📈 Confidence")
-            st.markdown(f"## {confidence*100:.2f}%")
-
-            st.markdown(f'<span class="badge {badge_class}">{info["risk"]} Risk</span>', unsafe_allow_html=True)
-
-            st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-
-            st.markdown("### 🌿 Disease Info")
-            st.write(f"**Cause:** {info['cause']}")
-            st.write(f"**Solution:** {info['solution']}")
-
-            st.markdown('</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 1.2])
 
     # -------------------------
-    # INSIGHTS TAB
+    # LEFT: IMAGE
     # -------------------------
-    with tab2:
-        st.markdown("### 📊 Model Confidence")
+    with col1:
+        st.image(image, caption="Uploaded Image", use_container_width=True)
 
-        class_labels = ["Early Blight", "Late Blight", "Healthy"]
+    # -------------------------
+    # RIGHT: ANALYTICS PANEL
+    # -------------------------
+    with col2:
+        prediction, confidence, preds, top2_idx = predict(image)
+
+        # Clean labels
+        display_label = prediction.split("___")[-1].replace("_", " ").title()
+        clean_label = prediction.split("___")[-1].replace("_", " ").lower()
+
+        info = disease_info.get(clean_label, {
+            "cause": "Unknown",
+            "solution": "N/A",
+            "risk": "N/A"
+        })
+
+        # -------------------------
+        # MAIN PREDICTION
+        # -------------------------
+        st.subheader("🧠 Prediction Result")
+        st.success(display_label)
+
+        st.metric("Confidence", f"{confidence*100:.2f}%")
+
+        # -------------------------
+        # RISK BADGE
+        # -------------------------
+        risk_color = {
+            "low": "🟢 Low",
+            "medium": "🟡 Medium",
+            "high": "🔴 High"
+        }
+
+        st.markdown(f"**Risk Level:** {risk_color.get(info['risk'].lower(), 'N/A')}")
+
+        # -------------------------
+        # DISEASE INFO
+        # -------------------------
+        st.markdown("### 🌿 Disease Insights")
+        st.info(f"**Cause:** {info['cause']}")
+        st.info(f"**Solution:** {info['solution']}")
+
+        # -------------------------
+        # CONFIDENCE CHART
+        # -------------------------
+        st.markdown("### 📊 Model Confidence Distribution")
+
+        labels = ["Early Blight", "Late Blight", "Healthy"]
+        values = preds
 
         fig, ax = plt.subplots()
-        ax.bar(class_labels, probs)
-        ax.set_title("Prediction Confidence")
+        ax.bar(labels, values)
+        ax.set_ylabel("Confidence")
+        ax.set_ylim([0, 1])
+
         st.pyplot(fig)
 
-        st.markdown("### 🔝 Top Predictions")
-        for i in top2_idx:
-            st.write(f"{class_labels[i]} → {probs[i]*100:.2f}%")
+        # -------------------------
+        # TOP PREDICTIONS
+        # -------------------------
+        st.markdown("### 🔍 Top Predictions")
 
-# -------------------------
-# FOOTER
-# -------------------------
-st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-st.caption("🚀 Built with Streamlit • TensorFlow • Deep Learning")
+        class_names = ["Early Blight", "Late Blight", "Healthy"]
+
+        for i in top2_idx:
+            st.write(f"{class_names[i]} : {preds[i]*100:.2f}%")
+
+        # -------------------------
+        # SMART INSIGHTS (🔥 UNIQUE FEATURE)
+        # -------------------------
+        st.markdown("### 💡 Smart Insights")
+
+        if "late" in clean_label:
+            st.warning("Severe infection detected. Immediate action required.")
+        elif "early" in clean_label:
+            st.warning("Moderate infection. Monitor closely and treat early.")
+        else:
+            st.success("Plant is healthy. Maintain current care.")
