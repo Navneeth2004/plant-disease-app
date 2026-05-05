@@ -1,53 +1,33 @@
 import numpy as np
 import tensorflow as tf
-from utils.preprocess import preprocess_image
 import os
+import streamlit as st
+from utils.preprocess import preprocess_image
 
-# =========================
-# LOAD MODEL SAFELY
-# =========================
-MODEL_PATH = "model/final_model.h5"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "model", "best_model.h5")
+CLASS_PATH = os.path.join(BASE_DIR, "model", "class_names.npy")
 
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"❌ Model not found at {MODEL_PATH}")
+@st.cache_resource
+def load_model():
+    return tf.keras.models.load_model(MODEL_PATH)
 
-model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+@st.cache_resource
+def load_classes():
+    class_indices = np.load(CLASS_PATH, allow_pickle=True).item()
+    return [k for k, v in sorted(class_indices.items(), key=lambda item: item[1])]
 
-# =========================
-# LOAD CLASS MAPPING
-# =========================
-CLASS_PATH = "model/class_names.npy"
+model = load_model()
+class_names = load_classes()
 
-if not os.path.exists(CLASS_PATH):
-    raise FileNotFoundError(f"❌ class_names.npy not found at {CLASS_PATH}")
-
-class_indices = np.load(CLASS_PATH, allow_pickle=True).item()
-
-# Clean class names → "Potato___Late_blight" → "late blight"
-class_names = [
-    cls.split("___")[-1].replace("_", " ").lower()
-    for cls in class_indices.keys()
-]
-
-# =========================
-# PREDICTION FUNCTION
-# =========================
 def predict(image):
-    try:
-        image = image.convert("RGB")
-        img = preprocess_image(image)
+    image = image.convert("RGB")
+    img = preprocess_image(image)
 
-        preds = model.predict(img)[0]
+    preds = model.predict(img)[0]
 
-        # Top prediction
-        idx = np.argmax(preds)
-        confidence = float(preds[idx])
+    idx = np.argmax(preds)
+    confidence = float(preds[idx])
+    top2_idx = preds.argsort()[-2:][::-1]
 
-        # Top 2 predictions (for insights)
-        top2_idx = preds.argsort()[-2:][::-1]
-
-        return class_names[idx], confidence, preds, top2_idx
-
-    except Exception as e:
-        print(f"❌ Prediction Error: {e}")
-        return "error", 0.0, None, None
+    return class_names[idx], confidence, preds, top2_idx
