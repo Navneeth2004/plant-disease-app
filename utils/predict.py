@@ -5,7 +5,7 @@ import streamlit as st
 from utils.preprocess import preprocess_image
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(BASE_DIR, "model", "best_model.h5")
+MODEL_PATH = os.path.join(BASE_DIR, "model", "model.keras")
 CLASS_PATH = os.path.join(BASE_DIR, "model", "class_names.npy")
 
 @st.cache_resource
